@@ -1,25 +1,28 @@
-const { chromium } = require('playwright');
+name: Automated QA with Playwright
 
-const seeds = Array.from({ length: 10 }, (_, i) => 38 + i);
-const baseURL = "https://sanand0.github.io/tdsdata/js_table/?seed=";
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
 
-(async () => {
-  const browser = await chromium.launch();
-  const page = await browser.newPage();
+jobs:
+  scrape-and-sum:
+    name: Scrape QA with 24ds1000011@ds.study.iitm.ac.in
+    runs-on: ubuntu-latest
 
-  let grandTotal = 0;
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-  for (const seed of seeds) {
-    const url = `${baseURL}${seed}`;
-    await page.goto(url);
-    const numbers = await page.$$eval('table td', tds =>
-      tds.map(td => parseFloat(td.textContent)).filter(n => !isNaN(n))
-    );
-    const pageSum = numbers.reduce((acc, val) => acc + val, 0);
-    console.log(`Seed ${seed} sum: ${pageSum}`);
-    grandTotal += pageSum;
-  }
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
-  console.log(`✅ Grand Total of all seeds: ${grandTotal}`);
-  await browser.close();
-})();
+      - name: Install dependencies
+        run: |
+          npm install playwright
+          npx playwright install --with-deps
+
+      - name: Run scraping script
+        run: node scrape_sum.js
